@@ -63,8 +63,8 @@ public class Web3TransactionChecker {
                     notify(entry.getChatId(), "Stopped watching *" + entry.getFrom() + "* (" + entries.getKey() + ") to *" + entry.getTo() + "*, no transfer for 10 blocks.");
                     copyList.remove(entry);
                 }
-                entries.setValue(copyList);
             }
+            entries.setValue(copyList);
         }
         Map<String, List<CachedTransactionDto>> copyWatchedTransations = new HashMap<>();
         for (Map.Entry<String, List<CachedTransactionDto>> entries : watchedTransactions.entrySet()) {
