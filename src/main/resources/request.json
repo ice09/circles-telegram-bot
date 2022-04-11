@@ -1,0 +1,35 @@
+query {
+  events(types: [
+    CrcHubTransfer
+  ]
+  safeAddress: "FROM"
+  pagination: {
+    limit: 100
+    continueAt: "STARTDATE"
+    order: DESC
+  }
+  ) {
+  timestamp
+  block_number
+  transaction_hash
+  type
+  safe_address
+  contact_address
+  direction
+  payload {
+  ...
+  on
+  CrcHubTransfer {
+  from
+  to
+  flow
+  transfers {
+  from
+  to
+  token
+  value
+}
+}
+}
+}
+}

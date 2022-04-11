@@ -1,0 +1,72 @@
+{
+  "data": {
+    "events": [
+      {
+        "timestamp": "2022-04-06T01:30:50.000Z",
+        "block_number": 21489597,
+        "transaction_hash": "0xf4acf179005791664a35db79f9ef04af03258784aea3215e05bc16c973c5c568",
+        "type": "CrcHubTransfer",
+        "safe_address": "0xde374ece6fa50e781e81aac78e811b33d16912c7",
+        "contact_address": "0xc5a786eafefcf703c114558c443e4f17969d9573",
+        "direction": "out",
+        "payload": {
+          "from": "0xde374ece6fa50e781e81aac78e811b33d16912c7",
+          "to": "0xc5a786eafefcf703c114558c443e4f17969d9573",
+          "flow": "3684920830481000000",
+          "transfers": [
+            {
+              "from": "0xde374ece6fa50e781e81aac78e811b33d16912c7",
+              "to": "0xc5a786eafefcf703c114558c443e4f17969d9573",
+              "token": "0x4261ae3bdf4ffc77cc05f946e8d71fcc52d0159e",
+              "value": "3684920830481000000"
+            }
+          ]
+        }
+      },
+      {
+        "timestamp": "2022-04-06T02:41:00.000Z",
+        "block_number": 21490437,
+        "transaction_hash": "0x75002d0f80bcec45790fb0638b4de20cb402cdfa4896613783e009c9321e1f2f",
+        "type": "CrcHubTransfer",
+        "safe_address": "0xde374ece6fa50e781e81aac78e811b33d16912c7",
+        "contact_address": "0xc5a786eafefcf703c114558c443e4f17969d9573",
+        "direction": "out",
+        "payload": {
+          "from": "0xde374ece6fa50e781e81aac78e811b33d16912c7",
+          "to": "0xc5a786eafefcf703c114558c443e4f17969d9573",
+          "flow": "3684920830481000000",
+          "transfers": [
+            {
+              "from": "0xde374ece6fa50e781e81aac78e811b33d16912c7",
+              "to": "0xc5a786eafefcf703c114558c443e4f17969d9573",
+              "token": "0x4261ae3bdf4ffc77cc05f946e8d71fcc52d0159e",
+              "value": "3684920830481000000"
+            }
+          ]
+        }
+      },
+      {
+        "timestamp": "2022-04-06T17:31:15.000Z",
+        "block_number": 21501105,
+        "transaction_hash": "0x817362684563ccbc6f10095fda9ffebcb810cd9d94dd7f4a690da51d6bff377d",
+        "type": "CrcHubTransfer",
+        "safe_address": "0xde374ece6fa50e781e81aac78e811b33d16912c7",
+        "contact_address": "0xc5a786eafefcf703c114558c443e4f17969d9573",
+        "direction": "out",
+        "payload": {
+          "from": "0xde374ece6fa50e781e81aac78e811b33d16912c7",
+          "to": "0xc5a786eafefcf703c114558c443e4f17969d9573",
+          "flow": "3685604380561000000",
+          "transfers": [
+            {
+              "from": "0xde374ece6fa50e781e81aac78e811b33d16912c7",
+              "to": "0xc5a786eafefcf703c114558c443e4f17969d9573",
+              "token": "0x4261ae3bdf4ffc77cc05f946e8d71fcc52d0159e",
+              "value": "3685604380561000000"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

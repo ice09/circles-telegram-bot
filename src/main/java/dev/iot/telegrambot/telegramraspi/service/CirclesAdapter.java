@@ -7,11 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.util.StringUtils;
 import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.objects.InputFile;
-import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.Optional;
 
@@ -34,13 +30,31 @@ public class CirclesAdapter {
         }
     }
 
+    public Optional<String> verifyCirclesUserName(String circlesUsername) {
+        try {
+            String circlesUser = Unirest.get(CIRCLES_GARDEN_API_USERS + circlesUsername).asString().getBody();
+            return Optional.of(JsonPath.parse(circlesUser).read("$['data']['username']"));
+        } catch (Exception ex) {
+            log.error("Cannot load user data from Circles.", ex);
+            return Optional.empty();
+        }
+    }
+
+    public Optional<String> deriveSafeAddress(String circlesUsername) {
+        try {
+            String circlesUser = Unirest.get(CIRCLES_GARDEN_API_USERS + circlesUsername).asString().getBody();
+            return Optional.of(JsonPath.parse(circlesUser).read("$['data']['safeAddress']"));
+        } catch (Exception ex) {
+            log.error("Cannot load user data from Circles.", ex);
+            return Optional.empty();
+        }
+    }
+
     public SendPhoto addCaptionForQuery(SendPhoto sendPhoto, String circlesUsername) {
         String circlesUser = Unirest.get(CIRCLES_GARDEN_API_USERS + circlesUsername).asString().getBody();
-        Object oSafe = JsonPath.parse(circlesUser).read("$['data']['safeAddress']");
-        Object oName = JsonPath.parse(circlesUser).read("$['data']['username']");
-        String sSafe = oSafe.toString();
-        String sName = oName.toString();
-        String caption = "Circles name is *" + sName + "* with Gnosis Safe address *" + sSafe + "*";
+        String safe = JsonPath.parse(circlesUser).read("$['data']['safeAddress']");
+        String name = JsonPath.parse(circlesUser).read("$['data']['username']");
+        String caption = "Circles name is *" + name + "* with Gnosis Safe address *" + safe + "*";
         sendPhoto.setParseMode("Markdown");
         sendPhoto.setCaption(caption);
         return sendPhoto;
@@ -48,10 +62,9 @@ public class CirclesAdapter {
 
     public SendPhoto addCaptionForInfo(SendPhoto sendPhoto, String circlesUsername, String telegramName, String derivedHashId) {
         String circlesUser = Unirest.get(CIRCLES_GARDEN_API_USERS + circlesUsername).asString().getBody();
-        Object oName = JsonPath.parse(circlesUser).read("$['data']['username']");
-        String sName = oName.toString();
-        String caption = "Hi *" + telegramName + "*, your Circles name is *" + sName + "*";
-        if (StringUtils.hasText(derivedHashId) &&  !sName.equals(derivedHashId)) {
+        Object name = JsonPath.parse(circlesUser).read("$['data']['username']");
+        String caption = "Hi *" + telegramName + "*, your Circles name is *" + name + "*";
+        if (StringUtils.hasText(derivedHashId) &&  !name.equals(derivedHashId)) {
             caption += "\n_Note: This address was set manually, it is not derived from the Telegram ID._";
         }
         sendPhoto.setParseMode("Markdown");
