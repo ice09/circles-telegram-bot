@@ -1,9 +1,6 @@
 package dev.iot.telegrambot.telegramraspi.service.dto;
 
-import lombok.Builder;
-import lombok.EqualsAndHashCode;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 import java.math.BigInteger;
 
@@ -11,6 +8,8 @@ import java.math.BigInteger;
 @Setter
 @Builder
 @EqualsAndHashCode
+@NoArgsConstructor
+@AllArgsConstructor
 public class CachedTransactionDto {
 
     private BigInteger startBlock;
