@@ -95,8 +95,9 @@ public class CirclesTelegramBot extends TelegramLongPollingBot implements BotSen
                             BigDecimal amount = new BigDecimal(args[2]);
                             String inviteLink = Base64.getEncoder().encodeToString(getInviteLink(chatId).getBytes(StandardCharsets.UTF_8));
                             // "http://...?to,amount,invite,chatId";
-                            web3TransactionChecker.trackAccount(chatId, fromCirclesSafe.get(), fromUser, toUser, this);
-                            createAndSendMessage(chatId, "Watching *" + fromCirclesUser.get() + "* for outgoing transfer to *" + toUser + "* about " + amount + " CRC for 10 Blocks.", "Markdown");
+                            String toCirclesSafe = circlesAdapter.deriveSafeAddress(toCirclesUser.get()).get();
+                            web3TransactionChecker.trackAccount(chatId, fromCirclesSafe.get(), fromUser, toCirclesSafe, toUser, this);
+                            createAndSendMessage(chatId, "Watching *" + fromCirclesUser.get() + "* for outgoing transfer to *" + toUser + "* about " + amount + " € for 10 Blocks.", "Markdown");
                             createAndSendMessage(chatId, "Click <a href='http://8c84-2003-ce-7f1d-ecb7-dd31-5709-bc5a-d96f.ngrok.io/prefill?to=" + toUser + "&amount=" + amount + "&chatId=" + chatId + "&inviteLink=" + inviteLink + "'>here</a> to execute transfer in Circles.", "HTML");
                         }
                     }
