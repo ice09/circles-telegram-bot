@@ -8,6 +8,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.jcajce.provider.digest.Keccak;
 import org.bouncycastle.util.encoders.Hex;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.util.StringUtils;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.CreateChatInviteLink;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
@@ -59,7 +60,17 @@ public class CirclesTelegramBot extends TelegramLongPollingBot implements BotSen
                         String circlesUser = keyValueService.searchValue(derivedHashedId);
                         Optional<SendPhoto> found = circlesAdapter.loadCirclesUserAvatar(chatId, circlesUser);
                         if (found.isEmpty()) {
-                            createAndSendMessage(chatId, "Hi *" + telegramName + "* you are not in Circles. Use *" + derivedHashedId + "* as Circles username on signup to help other users to find you with this bot.", "Markdown");
+                            Optional<String> verifiedName = circlesAdapter.verifyCirclesUserName(circlesUser);
+                            if (verifiedName.isEmpty()) {
+                                createAndSendMessage(chatId, "Hi *" + telegramName + "* you are not in Circles. Use *" + derivedHashedId + "* as Circles username on signup to help other users to find you with this bot.", "Markdown");
+                            } else {
+                                String content = "Hi *" + telegramName + "*, your Circles name is *" + circlesUser + "*";
+                                if (StringUtils.hasText(derivedHashedId) &&  !circlesUser.equals(derivedHashedId)) {
+                                    content += "\n_Note: This address was set manually, it is not derived from the Telegram ID._";
+                                }
+                                SendMessage sendMessage = SendMessage.builder().parseMode("Markdown").chatId(chatId).text(content).build();
+                                sendMsg(sendMessage);
+                            }
                         } else {
                             SendPhoto sendPhoto = found.get();
                             circlesAdapter.addCaptionForInfo(sendPhoto, circlesUser, telegramName, derivedHashedId);
@@ -76,7 +87,15 @@ public class CirclesTelegramBot extends TelegramLongPollingBot implements BotSen
                             circlesAdapter.addCaptionForQuery(sendPhoto, circlesUser);
                             sendPhoto(sendPhoto);
                         } else {
-                            createAndSendMessage(chatId, "*" + circlesUser + "* is not signed up in Circles.", "Markdown");
+                            Optional<String> verifiedName = circlesAdapter.verifyCirclesUserName(circlesUser);
+                            if (verifiedName.isEmpty()) {
+                                createAndSendMessage(chatId, "*" + circlesUser + "* is not signed up in Circles.", "Markdown");
+                            } else {
+                                String safe = circlesAdapter.deriveSafeAddress(verifiedName.get()).get();
+                                String content = "Circles name is *" + verifiedName.get() + "* with Gnosis Safe address *" + safe + "*";
+                                SendMessage sendMessage = SendMessage.builder().parseMode("Markdown").chatId(chatId).text(content).build();
+                                sendMsg(sendMessage);
+                            }
                         }
                     }
                     break;
@@ -98,7 +117,8 @@ public class CirclesTelegramBot extends TelegramLongPollingBot implements BotSen
                             String toCirclesSafe = circlesAdapter.deriveSafeAddress(toCirclesUser.get()).get();
                             web3TransactionChecker.trackAccount(chatId, fromCirclesSafe.get(), fromUser, toCirclesSafe, toUser, this);
                             createAndSendMessage(chatId, "Watching *" + fromCirclesUser.get() + "* for outgoing transfer to *" + toUser + "* about " + amount + " € for 10 Blocks.", "Markdown");
-                            createAndSendMessage(chatId, "Click <a href='http://8c84-2003-ce-7f1d-ecb7-dd31-5709-bc5a-d96f.ngrok.io/prefill?to=" + toUser + "&amount=" + amount + "&chatId=" + chatId + "&inviteLink=" + inviteLink + "'>here</a> to execute transfer in Circles.", "HTML");
+                            createAndSendMessage(chatId, "Please execute the transaction manually in <a href='http://circles.land'>circles.land</a>", "HTML");
+                            //createAndSendMessage(chatId, "Click <a href='http://8c84-2003-ce-7f1d-ecb7-dd31-5709-bc5a-d96f.ngrok.io/prefill?to=" + toUser + "&amount=" + amount + "&chatId=" + chatId + "&inviteLink=" + inviteLink + "'>here</a> to execute transfer in Circles.", "HTML");
                         }
                     }
                     break;
@@ -132,6 +152,14 @@ public class CirclesTelegramBot extends TelegramLongPollingBot implements BotSen
             execute(sendPhoto);
         } catch (TelegramApiException e) {
             log.error("Cannot send photo.", e);
+        }
+    }
+
+    private void sendMsg(SendMessage sendMsg) {
+        try {
+            execute(sendMsg);
+        } catch (TelegramApiException e) {
+            log.error("Cannot send message.", e);
         }
     }
 

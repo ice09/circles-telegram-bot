@@ -60,7 +60,7 @@ public class Web3TransactionChecker {
                 boolean watchedMoreThan10Blocks = web3Reader.getCurrentBlock().subtract(entry.getStartBlock()).intValue() > 10;
                 if (watchedMoreThan10Blocks && copyList.contains(entry)) {
                     log.error("Aborting tracking " + entries.getKey() + ". No answer for the last 10 blocks.");
-                    notify(entry.getChatId(), "Stopped watching *" + entry.getFrom() + "* (" + entries.getKey() + ") to *" + entry.getTo() + "*, no transfer for 10 blocks.");
+                    notify(entry.getChatId(), "Stopped watching *" + entry.getFrom() + "* (" + entries.getKey() + ") to *" + entry.getTo() + "*, no transfer detected for 10 blocks.");
                     copyList.remove(entry);
                 }
             }
