@@ -7,7 +7,6 @@ import dev.iot.telegrambot.telegramraspi.storage.KeyValueService;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.jcajce.provider.digest.Keccak;
 import org.bouncycastle.util.encoders.Hex;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.StringUtils;
 import org.telegram.telegrambots.bots.TelegramLongPollingBot;
 import org.telegram.telegrambots.meta.api.methods.groupadministration.CreateChatInviteLink;
@@ -18,8 +17,8 @@ import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 
 import java.math.BigDecimal;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.Optional;
 
 @Slf4j
@@ -29,13 +28,15 @@ public class CirclesTelegramBot extends TelegramLongPollingBot implements BotSen
     private final CirclesAdapter circlesAdapter;
     private final String telegramBotName;
     private final String telegramBotKey;
+    private final String circlesSite;
     private final Web3TransactionChecker web3TransactionChecker;
 
-    public CirclesTelegramBot(KeyValueService keyValueService, CirclesAdapter circlesAdapter, @Value("${telegramBotName}") String telegramBotName, @Value("${telegramBotKey}") String telegramBotKey, Web3TransactionChecker web3TransactionChecker) {
+    public CirclesTelegramBot(KeyValueService keyValueService, CirclesAdapter circlesAdapter, String telegramBotName, String telegramBotKey, String circlesSite, Web3TransactionChecker web3TransactionChecker) {
         this.keyValueService = keyValueService;
         this.circlesAdapter = circlesAdapter;
         this.telegramBotName = telegramBotName;
         this.telegramBotKey = telegramBotKey;
+        this.circlesSite = circlesSite;
         this.web3TransactionChecker = web3TransactionChecker;
     }
 
@@ -112,13 +113,11 @@ public class CirclesTelegramBot extends TelegramLongPollingBot implements BotSen
                             createAndSendMessage(chatId, "Sender *" + fromUser + "* is not a valid Circles User.", "Markdown");
                         } else {
                             BigDecimal amount = new BigDecimal(args[2]);
-                            String inviteLink = Base64.getEncoder().encodeToString(getInviteLink(chatId).getBytes(StandardCharsets.UTF_8));
-                            // "http://...?to,amount,invite,chatId";
+                            String inviteLink = URLEncoder.encode(getInviteLink(chatId), StandardCharsets.UTF_8);
                             String toCirclesSafe = circlesAdapter.deriveSafeAddress(toCirclesUser.get()).get();
                             web3TransactionChecker.trackAccount(chatId, fromCirclesSafe.get(), fromUser, toCirclesSafe, toUser, this);
                             createAndSendMessage(chatId, "Watching *" + fromCirclesUser.get() + "* for outgoing transfer to *" + toUser + "* about " + amount + " € for 10 Blocks.", "Markdown");
-                            createAndSendMessage(chatId, "Please execute the transaction manually in <a href='http://circles.land'>circles.land</a>", "HTML");
-                            //createAndSendMessage(chatId, "Click <a href='http://8c84-2003-ce-7f1d-ecb7-dd31-5709-bc5a-d96f.ngrok.io/prefill?to=" + toUser + "&amount=" + amount + "&chatId=" + chatId + "&inviteLink=" + inviteLink + "'>here</a> to execute transfer in Circles.", "HTML");
+                            createAndSendMessage(chatId, "Click <a href='" + circlesSite + "/#/banking/send/" + amount + "/" + toCirclesSafe + "/" + inviteLink + "'>here</a> to execute transfer in Circles.", "HTML");
                         }
                     }
                     break;

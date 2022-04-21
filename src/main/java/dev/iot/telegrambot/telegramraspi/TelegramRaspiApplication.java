@@ -20,13 +20,15 @@ public class TelegramRaspiApplication implements CommandLineRunner {
     private final CirclesAdapter circlesAdapter;
     private final String telegramBotName;
     private final String telegramBotKey;
+    private final String circlesSite;
     private final Web3TransactionChecker web3TransactionChecker;
 
-    public TelegramRaspiApplication(KeyValueService keyValueService, CirclesAdapter circlesAdapter, @Value("${telegramBotName}") String telegramBotName, @Value("${telegramBotKey}") String telegramBotKey, Web3TransactionChecker web3TransactionChecker) {
+    public TelegramRaspiApplication(KeyValueService keyValueService, CirclesAdapter circlesAdapter, @Value("${telegramBotName}") String telegramBotName, @Value("${telegramBotKey}") String telegramBotKey, @Value("${circles.site}") String circlesSite, Web3TransactionChecker web3TransactionChecker) {
         this.keyValueService = keyValueService;
         this.circlesAdapter = circlesAdapter;
         this.telegramBotName = telegramBotName;
         this.telegramBotKey = telegramBotKey;
+        this.circlesSite = circlesSite;
         this.web3TransactionChecker = web3TransactionChecker;
     }
 
@@ -38,7 +40,7 @@ public class TelegramRaspiApplication implements CommandLineRunner {
     public void run(String... args) throws Exception {
         try {
             TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
-            botsApi.registerBot(new CirclesTelegramBot(keyValueService, circlesAdapter, telegramBotName, telegramBotKey, web3TransactionChecker));
+            botsApi.registerBot(new CirclesTelegramBot(keyValueService, circlesAdapter, telegramBotName, telegramBotKey, circlesSite, web3TransactionChecker));
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }
