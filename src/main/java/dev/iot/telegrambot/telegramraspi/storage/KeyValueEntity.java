@@ -13,6 +13,8 @@ public class KeyValueEntity {
     private String key;
     private String value;
 
+    private String ext;
+
     public Long getId() {
         return id;
     }
@@ -37,12 +39,20 @@ public class KeyValueEntity {
         this.value = value;
     }
 
+    public String getExt() {
+        return ext;
+    }
+
+    public void setExt(String ext) {
+        this.ext = ext;
+    }
+
     @Override
     public String toString() {
         return "KeyValueEntity{" +
                 "id=" + id +
                 ", key='" + key + '\'' +
                 ", value='" + value + '\'' +
-                '}';
+                ", ext='" + ext + '\'' + "}";
     }
 }

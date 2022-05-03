@@ -8,4 +8,6 @@ public interface KeyValueRepository extends CrudRepository<KeyValueEntity, Long>
 
     KeyValueEntity findByKey(String key);
 
+    KeyValueEntity findByValue(String value);
+
 }

@@ -3,7 +3,10 @@ package dev.iot.telegrambot.telegramraspi;
 import dev.iot.telegrambot.telegramraspi.service.BotSender;
 import dev.iot.telegrambot.telegramraspi.service.CirclesAdapter;
 import dev.iot.telegrambot.telegramraspi.service.Web3TransactionChecker;
+import dev.iot.telegrambot.telegramraspi.storage.KeyValueEntity;
 import dev.iot.telegrambot.telegramraspi.storage.KeyValueService;
+import dev.iot.telegrambot.telegramraspi.web3.GnosisSafeOwnerCheck;
+import dev.iot.telegrambot.telegramraspi.web3.SignatureService;
 import lombok.extern.slf4j.Slf4j;
 import org.bouncycastle.jcajce.provider.digest.Keccak;
 import org.bouncycastle.util.encoders.Hex;
@@ -15,6 +18,7 @@ import org.telegram.telegrambots.meta.api.methods.send.SendPhoto;
 import org.telegram.telegrambots.meta.api.objects.ChatInviteLink;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
+import org.web3j.crypto.Hash;
 
 import java.math.BigDecimal;
 import java.net.URLEncoder;
@@ -30,14 +34,18 @@ public class CirclesTelegramBot extends TelegramLongPollingBot implements BotSen
     private final String telegramBotKey;
     private final String circlesSite;
     private final Web3TransactionChecker web3TransactionChecker;
+    private final GnosisSafeOwnerCheck gnosisSafeOwnerCheck;
+    private final SignatureService signatureService;
 
-    public CirclesTelegramBot(KeyValueService keyValueService, CirclesAdapter circlesAdapter, String telegramBotName, String telegramBotKey, String circlesSite, Web3TransactionChecker web3TransactionChecker) {
+    public CirclesTelegramBot(KeyValueService keyValueService, CirclesAdapter circlesAdapter, String telegramBotName, String telegramBotKey, String circlesSite, Web3TransactionChecker web3TransactionChecker, GnosisSafeOwnerCheck gnosisSafeOwnerCheck, SignatureService signatureService) {
         this.keyValueService = keyValueService;
         this.circlesAdapter = circlesAdapter;
         this.telegramBotName = telegramBotName;
         this.telegramBotKey = telegramBotKey;
         this.circlesSite = circlesSite;
         this.web3TransactionChecker = web3TransactionChecker;
+        this.gnosisSafeOwnerCheck = gnosisSafeOwnerCheck;
+        this.signatureService = signatureService;
     }
 
     @Override
@@ -51,6 +59,34 @@ public class CirclesTelegramBot extends TelegramLongPollingBot implements BotSen
             String[] args = update.getMessage().getText().split(" ");
             String command = args[0];
             switch (command.substring(1)) {
+                case "verify":
+                    {
+                        String telegramNameUpper = telegramName.toUpperCase();
+                        String chatIdUpper = deriveUniqueHashedId("CRC", chatId).toUpperCase();
+                        String content = "I AM " + telegramNameUpper + " FROM CHAT " + chatIdUpper;
+                        if (args.length == 1) {
+                            createAndSendMessage(chatId, "Please sign this message:\n*" + content + "*", "Markdown");
+                        } else {
+                            String circlesUser = keyValueService.searchValue(derivedHashedId);
+                            Optional<String> verifiedName = circlesAdapter.verifyCirclesUserName(circlesUser);
+                            if (verifiedName.isEmpty()) {
+                                createAndSendMessage(chatId, "Hi *" + telegramName + "* you are not in Circles. Use *" + derivedHashedId + "* as Circles username on signup to help other users to find you with this bot.", "Markdown");
+                            } else {
+                                Optional<String> safeAddr = circlesAdapter.deriveSafeAddress(circlesUser);
+                                if (!safeAddr.isEmpty()) {
+                                    boolean verifiedUserName = verifyUserName(circlesUser, safeAddr.get(), content, args[1]);
+                                    if (verifiedUserName) {
+                                        createAndSendMessage(chatId, "*" + telegramName + "* was successfully validated against Circles User *" + circlesUser + "*", "Markdown");
+                                    } else {
+                                        createAndSendMessage(chatId, "Error during verification of Signature.", "Markdown");
+                                    }
+                                } else {
+                                    log.error("Cannot derive safe address for " + circlesUser);
+                                }
+                            }
+                        }
+                    }
+                    break;
                 case "set":
                     {
                         setCirclesUsername(derivedHashedId, args[1]);
@@ -69,12 +105,12 @@ public class CirclesTelegramBot extends TelegramLongPollingBot implements BotSen
                                 if (StringUtils.hasText(derivedHashedId) &&  !circlesUser.equals(derivedHashedId)) {
                                     content += "\n_Note: This address was set manually, it is not derived from the Telegram ID._";
                                 }
-                                SendMessage sendMessage = SendMessage.builder().parseMode("Markdown").chatId(chatId).text(content).build();
-                                sendMsg(sendMessage);
+                                loadCompleteDataset(chatId, circlesUser, content);
                             }
                         } else {
                             SendPhoto sendPhoto = found.get();
                             circlesAdapter.addCaptionForInfo(sendPhoto, circlesUser, telegramName, derivedHashedId);
+                            sendPhoto.setCaption(enrichSignatureValidationInfo(circlesUser, sendPhoto.getCaption()));
                             sendPhoto(sendPhoto);
                         }
                     }
@@ -86,6 +122,7 @@ public class CirclesTelegramBot extends TelegramLongPollingBot implements BotSen
                         if (found.isPresent()) {
                             SendPhoto sendPhoto = found.get();
                             circlesAdapter.addCaptionForQuery(sendPhoto, circlesUser);
+                            sendPhoto.setCaption(enrichSignatureValidationInfo(circlesUser, sendPhoto.getCaption()));
                             sendPhoto(sendPhoto);
                         } else {
                             Optional<String> verifiedName = circlesAdapter.verifyCirclesUserName(circlesUser);
@@ -94,8 +131,7 @@ public class CirclesTelegramBot extends TelegramLongPollingBot implements BotSen
                             } else {
                                 String safe = circlesAdapter.deriveSafeAddress(verifiedName.get()).get();
                                 String content = "Circles name is *" + verifiedName.get() + "* with Gnosis Safe address *" + safe + "*";
-                                SendMessage sendMessage = SendMessage.builder().parseMode("Markdown").chatId(chatId).text(content).build();
-                                sendMsg(sendMessage);
+                                loadCompleteDataset(chatId, circlesUser, content);
                             }
                         }
                     }
@@ -123,6 +159,33 @@ public class CirclesTelegramBot extends TelegramLongPollingBot implements BotSen
                     break;
             }
         }
+    }
+
+    private boolean verifyUserName(String circlesUser, String safeAddr, String content, String signature) {
+        byte[] proof = Hash.sha3(signatureService.createProof(content.getBytes(StandardCharsets.UTF_8)));
+        for (String owner : gnosisSafeOwnerCheck.loadGnosisSafeOwner(safeAddr)) {
+            if (owner.substring(2).equalsIgnoreCase(signatureService.ecrecoverAddress(proof, Hex.decode(signature.substring(2)), owner))) {
+                updateCirclesUsername(circlesUser, signature);
+                log.info("Signature is valid for address " + safeAddr + ", '" + content + "' and signature " + signature);
+                return true;
+            }
+        }
+        log.error("Signature is not valid for address " + safeAddr + ", '" + content + "' and signature " + signature);
+        return false;
+    }
+
+    private void loadCompleteDataset(String chatId, String circlesUser, String content) {
+        content = enrichSignatureValidationInfo(circlesUser, content);
+        SendMessage sendMessage = SendMessage.builder().parseMode("Markdown").chatId(chatId).text(content).build();
+        sendMsg(sendMessage);
+    }
+
+    private String enrichSignatureValidationInfo(String circlesUser, String content) {
+        KeyValueEntity entity = keyValueService.loadEntityByValue(circlesUser);
+        if ((entity != null) && StringUtils.hasText(entity.getExt())) {
+            content += "\n_Note: This address has been validated by successful signature verification._";
+        }
+        return content;
     }
 
     private String getInviteLink(String chatId) {
@@ -170,8 +233,13 @@ public class CirclesTelegramBot extends TelegramLongPollingBot implements BotSen
     }
 
     public void setCirclesUsername(String key, String value) {
-        keyValueService.setKeyValue(key, value);
+        keyValueService.setKeyValue(key, value, null);
     }
+
+    public void updateCirclesUsername(String value, String signature) {
+        keyValueService.updateValueExt(value, signature);
+    }
+
 
     @Override
     public String getBotUsername() {

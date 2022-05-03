@@ -3,6 +3,8 @@ package dev.iot.telegrambot.telegramraspi;
 import dev.iot.telegrambot.telegramraspi.service.CirclesAdapter;
 import dev.iot.telegrambot.telegramraspi.service.Web3TransactionChecker;
 import dev.iot.telegrambot.telegramraspi.storage.KeyValueService;
+import dev.iot.telegrambot.telegramraspi.web3.GnosisSafeOwnerCheck;
+import dev.iot.telegrambot.telegramraspi.web3.SignatureService;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
@@ -22,14 +24,18 @@ public class TelegramRaspiApplication implements CommandLineRunner {
     private final String telegramBotKey;
     private final String circlesSite;
     private final Web3TransactionChecker web3TransactionChecker;
+    private final GnosisSafeOwnerCheck gnosisSafeOwnerCheck;
+    private final SignatureService signatureService;
 
-    public TelegramRaspiApplication(KeyValueService keyValueService, CirclesAdapter circlesAdapter, @Value("${telegramBotName}") String telegramBotName, @Value("${telegramBotKey}") String telegramBotKey, @Value("${circles.site}") String circlesSite, Web3TransactionChecker web3TransactionChecker) {
+    public TelegramRaspiApplication(KeyValueService keyValueService, CirclesAdapter circlesAdapter, @Value("${telegramBotName}") String telegramBotName, @Value("${telegramBotKey}") String telegramBotKey, @Value("${circles.site}") String circlesSite, Web3TransactionChecker web3TransactionChecker, GnosisSafeOwnerCheck gnosisSafeOwnerCheck, SignatureService signatureService) {
         this.keyValueService = keyValueService;
         this.circlesAdapter = circlesAdapter;
         this.telegramBotName = telegramBotName;
         this.telegramBotKey = telegramBotKey;
         this.circlesSite = circlesSite;
         this.web3TransactionChecker = web3TransactionChecker;
+        this.gnosisSafeOwnerCheck = gnosisSafeOwnerCheck;
+        this.signatureService = signatureService;
     }
 
     public static void main(String[] args) {
@@ -40,7 +46,7 @@ public class TelegramRaspiApplication implements CommandLineRunner {
     public void run(String... args) throws Exception {
         try {
             TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
-            botsApi.registerBot(new CirclesTelegramBot(keyValueService, circlesAdapter, telegramBotName, telegramBotKey, circlesSite, web3TransactionChecker));
+            botsApi.registerBot(new CirclesTelegramBot(keyValueService, circlesAdapter, telegramBotName, telegramBotKey, circlesSite, web3TransactionChecker, gnosisSafeOwnerCheck, signatureService));
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }

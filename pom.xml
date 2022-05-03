@@ -93,6 +93,63 @@
 			<plugin>
 				<groupId>org.springframework.boot</groupId>
 				<artifactId>spring-boot-maven-plugin</artifactId>
+				<configuration>
+					<image>
+						<name>ice0nine/${project.name}</name>
+					</image>
+				</configuration>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>build-helper-maven-plugin</artifactId>
+				<version>3.0.0</version>
+				<executions>
+					<execution>
+						<id>add-source</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>add-source</goal>
+						</goals>
+						<configuration>
+							<sources>
+								<source>${basedir}/target/generated-sources/solidity</source>
+							</sources>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+			<plugin>
+				<groupId>org.web3j</groupId>
+				<artifactId>web3j-maven-plugin</artifactId>
+				<version>4.8.7</version>
+				<executions>
+					<execution>
+						<id>generate-sources</id>
+						<phase>generate-sources</phase>
+						<goals>
+							<goal>generate-sources</goal>
+						</goals>
+						<configuration>
+							<packageName>tech.blockchainers</packageName>
+							<sourceDestination>${basedir}/target/generated-sources/solidity</sourceDestination>
+							<nativeJavaType>true</nativeJavaType>
+							<outputFormat>java</outputFormat>
+							<soliditySourceFiles>
+								<directory>src/main/resources</directory>
+								<includes>
+									<include>**/*.sol</include>
+								</includes>
+							</soliditySourceFiles>
+							<abiSourceFiles>
+								<directory>src/main/resources</directory>
+								<excludes>
+									<exclude>request.json</exclude>
+									<exclude>result.json</exclude>
+								</excludes>
+							</abiSourceFiles>
+						</configuration>
+					</execution>
+				</executions>
 			</plugin>
 		</plugins>
 	</build>
