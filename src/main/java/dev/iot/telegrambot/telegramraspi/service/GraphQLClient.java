@@ -2,10 +2,7 @@ package dev.iot.telegrambot.telegramraspi.service;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.google.common.collect.Lists;
 import dev.iot.telegrambot.telegramraspi.service.dto.event.EventResponseDto;
-import dev.iot.telegrambot.telegramraspi.service.dto.profile.Data;
-import dev.iot.telegrambot.telegramraspi.service.dto.profile.Search;
 import dev.iot.telegrambot.telegramraspi.service.dto.profile.SearchResponseDto;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.commons.io.IOUtils;
@@ -14,7 +11,6 @@ import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.jetbrains.annotations.NotNull;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.Resource;
@@ -25,7 +21,6 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 
 import static java.nio.charset.StandardCharsets.UTF_8;
 

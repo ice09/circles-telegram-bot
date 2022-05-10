@@ -4,7 +4,6 @@ import dev.iot.telegrambot.telegramraspi.service.dto.event.CachedTransactionDto;
 import dev.iot.telegrambot.telegramraspi.service.dto.event.Data;
 import dev.iot.telegrambot.telegramraspi.service.dto.event.Event;
 import dev.iot.telegrambot.telegramraspi.service.dto.event.EventResponseDto;
-import dev.iot.telegrambot.telegramraspi.service.dto.profile.Search;
 import dev.iot.telegrambot.telegramraspi.web3.Web3Reader;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
