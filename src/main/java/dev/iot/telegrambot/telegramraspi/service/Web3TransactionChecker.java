@@ -1,9 +1,10 @@
 package dev.iot.telegrambot.telegramraspi.service;
 
-import dev.iot.telegrambot.telegramraspi.service.dto.CachedTransactionDto;
-import dev.iot.telegrambot.telegramraspi.service.dto.Data;
-import dev.iot.telegrambot.telegramraspi.service.dto.Event;
-import dev.iot.telegrambot.telegramraspi.service.dto.ResponseDto;
+import dev.iot.telegrambot.telegramraspi.service.dto.event.CachedTransactionDto;
+import dev.iot.telegrambot.telegramraspi.service.dto.event.Data;
+import dev.iot.telegrambot.telegramraspi.service.dto.event.Event;
+import dev.iot.telegrambot.telegramraspi.service.dto.event.EventResponseDto;
+import dev.iot.telegrambot.telegramraspi.service.dto.profile.Search;
 import dev.iot.telegrambot.telegramraspi.web3.Web3Reader;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -40,7 +41,7 @@ public class Web3TransactionChecker {
     @Scheduled(fixedDelay = 2000)
     public void checkTransactions() throws URISyntaxException, IOException {
         for (Map.Entry<String, List<CachedTransactionDto>> entries : watchedTransactions.entrySet()) {
-            ResponseDto cTrx = graphQLClient.trackAccount(entries.getKey());
+            EventResponseDto cTrx = graphQLClient.trackAccount(entries.getKey());
             List<CachedTransactionDto> copyList = new ArrayList<>();
             for (CachedTransactionDto entry : entries.getValue()) {
                 log.info("Tracking: " + entries.getKey() + " with startBlock " + entry.getStartBlock());
@@ -72,7 +73,7 @@ public class Web3TransactionChecker {
                 copyWatchedTransations.put(entries.getKey(), entries.getValue());
             }
         }
-        watchedTransactions = new HashMap<>(copyWatchedTransations);
+        watchedTransactions = new HashMap<String, List<CachedTransactionDto>>(copyWatchedTransations);
     }
 
     private void notify(String chatId, String message) {

@@ -1,0 +1,8 @@
+query {
+  search(query:{searchString:"USERNAME"}) {
+  firstName
+  lastName
+  circlesAddress
+  avatarUrl
+}
+}

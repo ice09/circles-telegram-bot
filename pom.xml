@@ -143,8 +143,8 @@
 							<abiSourceFiles>
 								<directory>src/main/resources</directory>
 								<excludes>
-									<exclude>request.json</exclude>
-									<exclude>result.json</exclude>
+									<exclude>request*.json</exclude>
+									<exclude>result*.json</exclude>
 								</excludes>
 							</abiSourceFiles>
 						</configuration>

@@ -1,4 +1,4 @@
-package dev.iot.telegrambot.telegramraspi.service.dto;
+package dev.iot.telegrambot.telegramraspi.service.dto.profile;
 
 import lombok.*;
 
@@ -7,7 +7,7 @@ import lombok.*;
 @Builder
 @NoArgsConstructor
 @AllArgsConstructor
-public class ResponseDto {
+public class SearchResponseDto {
 
     private Data data;
 

@@ -1,4 +1,4 @@
-package dev.iot.telegrambot.telegramraspi.service.dto;
+package dev.iot.telegrambot.telegramraspi.service.dto.event;
 
 import lombok.*;
 

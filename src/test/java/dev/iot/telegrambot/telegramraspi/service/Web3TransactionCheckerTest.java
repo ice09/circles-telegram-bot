@@ -1,6 +1,6 @@
 package dev.iot.telegrambot.telegramraspi.service;
 
-import dev.iot.telegrambot.telegramraspi.service.dto.*;
+import dev.iot.telegrambot.telegramraspi.service.dto.event.*;
 import dev.iot.telegrambot.telegramraspi.web3.Web3Reader;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
@@ -26,8 +26,8 @@ public class Web3TransactionCheckerTest {
         Event event = Event.builder().block_number(BigInteger.ONE).payload(payload).build();
         List<Event> events = List.of(event);
         Data data = Data.builder().events(events).build();
-        ResponseDto responseDto = ResponseDto.builder().data(data).build();
-        when(graphQLClient.trackAccount("0x0")).thenReturn(responseDto);
+        EventResponseDto eventResponseDto = EventResponseDto.builder().data(data).build();
+        when(graphQLClient.trackAccount("0x0")).thenReturn(eventResponseDto);
 
         Web3TransactionChecker web3TransactionChecker = new Web3TransactionChecker(web3Reader, graphQLClient);
         web3TransactionChecker.checkTransactions();
@@ -44,8 +44,8 @@ public class Web3TransactionCheckerTest {
         Event event = Event.builder().block_number(BigInteger.ONE).payload(payload).build();
         List<Event> events = List.of(event);
         Data data = Data.builder().events(events).build();
-        ResponseDto responseDto = ResponseDto.builder().data(data).build();
-        when(graphQLClient.trackAccount(any())).thenReturn(responseDto);
+        EventResponseDto eventResponseDto = EventResponseDto.builder().data(data).build();
+        when(graphQLClient.trackAccount(any())).thenReturn(eventResponseDto);
         BotSender botSender = Mockito.mock(BotSender.class);
 
         CachedTransactionDto ctDto = CachedTransactionDto.builder().chatId("chatId").from("from").to("to").toAddr("toAddr").startBlock(BigInteger.ONE).build();
@@ -71,8 +71,8 @@ public class Web3TransactionCheckerTest {
         Event event = Event.builder().block_number(BigInteger.TWO).payload(payload).build();
         List<Event> events = List.of(event);
         Data data = Data.builder().events(events).build();
-        ResponseDto responseDto = ResponseDto.builder().data(data).build();
-        when(graphQLClient.trackAccount(any())).thenReturn(responseDto);
+        EventResponseDto eventResponseDto = EventResponseDto.builder().data(data).build();
+        when(graphQLClient.trackAccount(any())).thenReturn(eventResponseDto);
         BotSender botSender = Mockito.mock(BotSender.class);
 
         Web3TransactionChecker web3TransactionChecker = new Web3TransactionChecker(web3Reader, graphQLClient);
@@ -96,8 +96,8 @@ public class Web3TransactionCheckerTest {
         Event event = Event.builder().block_number(BigInteger.ONE).payload(payload).build();
         List<Event> events = List.of(event);
         Data data = Data.builder().events(events).build();
-        ResponseDto responseDto = ResponseDto.builder().data(data).build();
-        when(graphQLClient.trackAccount(any())).thenReturn(responseDto);
+        EventResponseDto eventResponseDto = EventResponseDto.builder().data(data).build();
+        when(graphQLClient.trackAccount(any())).thenReturn(eventResponseDto);
         BotSender botSender = Mockito.mock(BotSender.class);
 
         CachedTransactionDto ctDto = CachedTransactionDto.builder().chatId("chatId").from("from").to("to").toAddr("0x1").startBlock(BigInteger.TWO).build();
@@ -123,8 +123,8 @@ public class Web3TransactionCheckerTest {
         Event event1 = Event.builder().block_number(BigInteger.valueOf(1)).payload(payload).build();
         List<Event> events1 = List.of(event1);
         Data data1 = Data.builder().events(events1).build();
-        ResponseDto responseDto1 = ResponseDto.builder().data(data1).build();
-        when(graphQLClient.trackAccount(any())).thenReturn(responseDto1);
+        EventResponseDto eventResponseDto1 = EventResponseDto.builder().data(data1).build();
+        when(graphQLClient.trackAccount(any())).thenReturn(eventResponseDto1);
         BotSender botSender = Mockito.mock(BotSender.class);
 
         Web3TransactionChecker web3TransactionChecker = new Web3TransactionChecker(web3Reader, graphQLClient);
@@ -148,8 +148,8 @@ public class Web3TransactionCheckerTest {
         Event event1 = Event.builder().block_number(BigInteger.valueOf(1)).payload(payload).build();
         List<Event> events1 = List.of(event1);
         Data data1 = Data.builder().events(events1).build();
-        ResponseDto responseDto1 = ResponseDto.builder().data(data1).build();
-        when(graphQLClient.trackAccount(any())).thenReturn(responseDto1);
+        EventResponseDto eventResponseDto1 = EventResponseDto.builder().data(data1).build();
+        when(graphQLClient.trackAccount(any())).thenReturn(eventResponseDto1);
         BotSender botSender = Mockito.mock(BotSender.class);
 
         CachedTransactionDto ctDto = CachedTransactionDto.builder().chatId("chatId").from("from").to("to").toAddr("0x1").startBlock(BigInteger.ONE).build();

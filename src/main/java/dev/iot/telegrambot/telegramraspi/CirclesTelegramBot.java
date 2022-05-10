@@ -3,6 +3,7 @@ package dev.iot.telegrambot.telegramraspi;
 import dev.iot.telegrambot.telegramraspi.service.BotSender;
 import dev.iot.telegrambot.telegramraspi.service.CirclesAdapter;
 import dev.iot.telegrambot.telegramraspi.service.Web3TransactionChecker;
+import dev.iot.telegrambot.telegramraspi.service.dto.profile.Search;
 import dev.iot.telegrambot.telegramraspi.storage.KeyValueEntity;
 import dev.iot.telegrambot.telegramraspi.storage.KeyValueService;
 import dev.iot.telegrambot.telegramraspi.web3.GnosisSafeOwnerCheck;
@@ -23,7 +24,10 @@ import org.web3j.crypto.Hash;
 import java.math.BigDecimal;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.Optional;
+import java.util.regex.MatchResult;
+import java.util.regex.Pattern;
 
 @Slf4j
 public class CirclesTelegramBot extends TelegramLongPollingBot implements BotSender {
@@ -56,107 +60,131 @@ public class CirclesTelegramBot extends TelegramLongPollingBot implements BotSen
             String chatId = update.getMessage().getChatId().toString();
             String derivedHashedId = deriveUniqueHashedId(telegramName, telegramId);
             log.info("Received Message '" + update.getMessage().getText() + "'");
-            String[] args = update.getMessage().getText().split(" ");
+            String[] args = Pattern.compile("\"[^\"]*\"|[^ ]+")
+                    .matcher(update.getMessage().getText())
+                    .results()
+                    .map(MatchResult::group)
+                    .toArray(String[]::new);
             String command = args[0];
-            switch (command.substring(1)) {
-                case "verify":
-                    {
-                        String telegramNameUpper = telegramName.toUpperCase();
-                        String chatIdUpper = deriveUniqueHashedId("CRC", chatId).toUpperCase();
-                        String content = "I AM " + telegramNameUpper + " FROM CHAT " + chatIdUpper;
-                        if (args.length == 1) {
-                            createAndSendMessage(chatId, "Please sign this message:\n*" + content + "*", "Markdown");
-                        } else {
-                            String circlesUser = keyValueService.searchValue(derivedHashedId);
-                            Optional<String> verifiedName = circlesAdapter.verifyCirclesUserName(circlesUser);
-                            if (verifiedName.isEmpty()) {
-                                createAndSendMessage(chatId, "Hi *" + telegramName + "* you are not in Circles. Use *" + derivedHashedId + "* as Circles username on signup to help other users to find you with this bot.", "Markdown");
-                            } else {
-                                Optional<String> safeAddr = circlesAdapter.deriveSafeAddress(circlesUser);
-                                if (!safeAddr.isEmpty()) {
-                                    boolean verifiedUserName = verifyUserName(circlesUser, safeAddr.get(), content, args[1]);
-                                    if (verifiedUserName) {
-                                        createAndSendMessage(chatId, "*" + telegramName + "* was successfully validated against Circles User *" + circlesUser + "*", "Markdown");
-                                    } else {
-                                        createAndSendMessage(chatId, "Error during verification of Signature.", "Markdown");
-                                    }
-                                } else {
-                                    log.error("Cannot derive safe address for " + circlesUser);
-                                }
-                            }
-                        }
-                    }
-                    break;
-                case "set":
-                    {
+            try {
+                switch (command.substring(1)) {
+                    case "verify":
+                        verifyCirclesUser(telegramName, chatId, derivedHashedId, args);
+                        break;
+                    case "set":
                         setCirclesUsername(derivedHashedId, args[1]);
+                        // break; should fall through!
+                    case "info":
+                        readCirclesUserInfo(telegramName, chatId, derivedHashedId);
+                        break;
+                    case "query":
+                        queryCirclesUser(chatId, args);
+                        break;
+                    case "transfer":
+                        initiateCirclesTransfer(chatId, derivedHashedId, args);
+                        break;
+                }
+            } catch (IllegalArgumentException iae) {
+                createAndSendMessage(chatId, "Error during processing: " + iae.getMessage(), "Markdown");
+            }
+        }
+    }
+
+    private void initiateCirclesTransfer(String chatId, String derivedHashedId, String[] args) {
+        String toUser = args[1];
+        String fromUser = keyValueService.searchValue(derivedHashedId);
+        Optional<String> fromCirclesUser = circlesAdapter.verifyCirclesUserName(fromUser);
+        Optional<String> fromCirclesSafe = circlesAdapter.deriveSafeAddress(fromUser);
+        Optional<String> toCirclesUser = circlesAdapter.verifyCirclesUserName(toUser);
+        if (toCirclesUser.isEmpty()) {
+            createAndSendMessage(chatId, "Receiver *" + toUser + "* is not a valid Circles User.", "Markdown");
+        } else if (fromCirclesUser.isEmpty()) {
+            createAndSendMessage(chatId, "Sender *" + fromUser + "* is not a valid Circles User.", "Markdown");
+        } else {
+            BigDecimal amount = new BigDecimal(args[2]);
+            String inviteLink = URLEncoder.encode(getInviteLink(chatId), StandardCharsets.UTF_8);
+            String toCirclesSafe = circlesAdapter.deriveSafeAddress(toCirclesUser.get()).get();
+            web3TransactionChecker.trackAccount(chatId, fromCirclesSafe.get(), fromUser, toCirclesSafe, toUser, this);
+            createAndSendMessage(chatId, "Watching *" + fromCirclesUser.get() + "* for outgoing transfer to *" + toUser + "* about " + amount + " € for 10 Blocks.", "Markdown");
+            createAndSendMessage(chatId, "Click <a href='" + circlesSite + "/#/banking/send/" + amount + "/" + toCirclesSafe + "/" + inviteLink + "'>here</a> to execute transfer in Circles.", "HTML");
+        }
+    }
+
+    private void queryCirclesUser(String chatId, String[] args) {
+        String circlesUser = args[1];
+        Optional<SendPhoto> found = circlesAdapter.loadCirclesUserAvatar(chatId, circlesUser);
+        if (found.isPresent()) {
+            SendPhoto sendPhoto = found.get();
+            try {
+                circlesAdapter.addCaptionForQuery(sendPhoto, circlesUser);
+                sendPhoto.setCaption(enrichSignatureValidationInfo(circlesUser, sendPhoto.getCaption()));
+            } catch (Exception ex) {
+                log.error(ex.getMessage());
+                sendPhoto.setCaption("An error occurred while processing Circles data.");
+            }
+            sendPhoto(sendPhoto);
+        } else {
+            Optional<String> verifiedName = circlesAdapter.verifyCirclesUserName(circlesUser);
+            if (verifiedName.isEmpty()) {
+                createAndSendMessage(chatId, "*" + circlesUser + "* is not signed up in Circles.", "Markdown");
+            } else {
+                String safe = circlesAdapter.deriveSafeAddress(verifiedName.get()).get();
+                String content = "Circles name is *" + verifiedName.get() + "* with Gnosis Safe address *" + safe + "*";
+                loadCompleteDataset(chatId, circlesUser, content);
+            }
+        }
+    }
+
+    private void readCirclesUserInfo(String telegramName, String chatId, String derivedHashedId) {
+        String circlesUser = keyValueService.searchValue(derivedHashedId);
+        Optional<SendPhoto> found = circlesAdapter.loadCirclesUserAvatar(chatId, circlesUser);
+        if (found.isEmpty()) {
+            Optional<String> verifiedName = circlesAdapter.verifyCirclesUserName(circlesUser);
+            if (verifiedName.isEmpty()) {
+                createAndSendMessage(chatId, "Hi *" + telegramName + "* you are not in Circles. Use *" + derivedHashedId + "* as Circles username on signup to help other users to find you with this bot.", "Markdown");
+            } else {
+                String content = "Hi *" + telegramName + "*, your Circles name is *" + circlesUser + "*";
+                if (StringUtils.hasText(derivedHashedId) &&  !circlesUser.equals(derivedHashedId)) {
+                    content += "\n_Note: This address was set manually, it is not derived from the Telegram ID._";
+                }
+                loadCompleteDataset(chatId, circlesUser, content);
+            }
+        } else {
+            SendPhoto sendPhoto = found.get();
+            try {
+                circlesAdapter.addCaptionForInfo(sendPhoto, circlesUser, telegramName, derivedHashedId);
+                sendPhoto.setCaption(enrichSignatureValidationInfo(circlesUser, sendPhoto.getCaption()));
+            } catch (Exception ex) {
+                log.error(ex.getMessage());
+                sendPhoto.setCaption("An error occurred while processing Circles data.");
+            }
+            sendPhoto(sendPhoto);
+        }
+    }
+
+    private void verifyCirclesUser(String telegramName, String chatId, String derivedHashedId, String[] args) {
+        String telegramNameUpper = telegramName.toUpperCase();
+        String chatIdUpper = deriveUniqueHashedId("CRC", chatId).toUpperCase();
+        String content = "I AM " + telegramNameUpper + " FROM CHAT " + chatIdUpper;
+        if (args.length == 1) {
+            createAndSendMessage(chatId, "Please sign this message:\n*" + content + "*", "Markdown");
+        } else {
+            String circlesUser = keyValueService.searchValue(derivedHashedId);
+            Optional<String> verifiedName = circlesAdapter.verifyCirclesUserName(circlesUser);
+            if (verifiedName.isEmpty()) {
+                createAndSendMessage(chatId, "Hi *" + telegramName + "* you are not in Circles. Use *" + derivedHashedId + "* as Circles username on signup to help other users to find you with this bot.", "Markdown");
+            } else {
+                Optional<String> safeAddr = circlesAdapter.deriveSafeAddress(circlesUser);
+                if (!safeAddr.isEmpty()) {
+                    boolean verifiedUserName = verifyUserName(circlesUser, safeAddr.get(), content, args[1]);
+                    if (verifiedUserName) {
+                        createAndSendMessage(chatId, "*" + telegramName + "* was successfully validated against Circles User *" + circlesUser + "*", "Markdown");
+                    } else {
+                        createAndSendMessage(chatId, "Error during verification of Signature.", "Markdown");
                     }
-                    // break; should fall through!
-                case "info":
-                    {
-                        String circlesUser = keyValueService.searchValue(derivedHashedId);
-                        Optional<SendPhoto> found = circlesAdapter.loadCirclesUserAvatar(chatId, circlesUser);
-                        if (found.isEmpty()) {
-                            Optional<String> verifiedName = circlesAdapter.verifyCirclesUserName(circlesUser);
-                            if (verifiedName.isEmpty()) {
-                                createAndSendMessage(chatId, "Hi *" + telegramName + "* you are not in Circles. Use *" + derivedHashedId + "* as Circles username on signup to help other users to find you with this bot.", "Markdown");
-                            } else {
-                                String content = "Hi *" + telegramName + "*, your Circles name is *" + circlesUser + "*";
-                                if (StringUtils.hasText(derivedHashedId) &&  !circlesUser.equals(derivedHashedId)) {
-                                    content += "\n_Note: This address was set manually, it is not derived from the Telegram ID._";
-                                }
-                                loadCompleteDataset(chatId, circlesUser, content);
-                            }
-                        } else {
-                            SendPhoto sendPhoto = found.get();
-                            circlesAdapter.addCaptionForInfo(sendPhoto, circlesUser, telegramName, derivedHashedId);
-                            sendPhoto.setCaption(enrichSignatureValidationInfo(circlesUser, sendPhoto.getCaption()));
-                            sendPhoto(sendPhoto);
-                        }
-                    }
-                    break;
-                case "query":
-                    {
-                        String circlesUser = args[1];
-                        Optional<SendPhoto> found = circlesAdapter.loadCirclesUserAvatar(chatId, circlesUser);
-                        if (found.isPresent()) {
-                            SendPhoto sendPhoto = found.get();
-                            circlesAdapter.addCaptionForQuery(sendPhoto, circlesUser);
-                            sendPhoto.setCaption(enrichSignatureValidationInfo(circlesUser, sendPhoto.getCaption()));
-                            sendPhoto(sendPhoto);
-                        } else {
-                            Optional<String> verifiedName = circlesAdapter.verifyCirclesUserName(circlesUser);
-                            if (verifiedName.isEmpty()) {
-                                createAndSendMessage(chatId, "*" + circlesUser + "* is not signed up in Circles.", "Markdown");
-                            } else {
-                                String safe = circlesAdapter.deriveSafeAddress(verifiedName.get()).get();
-                                String content = "Circles name is *" + verifiedName.get() + "* with Gnosis Safe address *" + safe + "*";
-                                loadCompleteDataset(chatId, circlesUser, content);
-                            }
-                        }
-                    }
-                    break;
-                case "transfer":
-                    {
-                        String toUser = args[1];
-                        String fromUser = keyValueService.searchValue(derivedHashedId);
-                        Optional<String> fromCirclesUser = circlesAdapter.verifyCirclesUserName(fromUser);
-                        Optional<String> fromCirclesSafe = circlesAdapter.deriveSafeAddress(fromUser);
-                        Optional<String> toCirclesUser = circlesAdapter.verifyCirclesUserName(toUser);
-                        if (toCirclesUser.isEmpty()) {
-                            createAndSendMessage(chatId, "Receiver *" + toUser + "* is not a valid Circles User.", "Markdown");
-                        } else if (fromCirclesUser.isEmpty()) {
-                            createAndSendMessage(chatId, "Sender *" + fromUser + "* is not a valid Circles User.", "Markdown");
-                        } else {
-                            BigDecimal amount = new BigDecimal(args[2]);
-                            String inviteLink = URLEncoder.encode(getInviteLink(chatId), StandardCharsets.UTF_8);
-                            String toCirclesSafe = circlesAdapter.deriveSafeAddress(toCirclesUser.get()).get();
-                            web3TransactionChecker.trackAccount(chatId, fromCirclesSafe.get(), fromUser, toCirclesSafe, toUser, this);
-                            createAndSendMessage(chatId, "Watching *" + fromCirclesUser.get() + "* for outgoing transfer to *" + toUser + "* about " + amount + " € for 10 Blocks.", "Markdown");
-                            createAndSendMessage(chatId, "Click <a href='" + circlesSite + "/#/banking/send/" + amount + "/" + toCirclesSafe + "/" + inviteLink + "'>here</a> to execute transfer in Circles.", "HTML");
-                        }
-                    }
-                    break;
+                } else {
+                    log.error("Cannot derive safe address for " + circlesUser);
+                }
             }
         }
     }

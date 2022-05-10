@@ -1,6 +1,7 @@
 package dev.iot.telegrambot.telegramraspi.web3;
 
 import com.google.common.collect.Lists;
+import dev.iot.telegrambot.telegramraspi.service.dto.profile.Search;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.web3j.crypto.Credentials;
