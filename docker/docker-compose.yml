@@ -12,4 +12,7 @@ services:
       volumes:
         - db:/var/lib/postgresql/data
     circles:
-      image: circles-stats-web-proxy:0.0.1-SNAPSHOT
+      image: ice0nine/telegram-bot
+volumes:
+  db:
+    driver: local
