@@ -5,14 +5,21 @@ services:
       image: postgres:14.1-alpine
       restart: always
       environment:
-        - POSTGRES_USER=postgres
-        - POSTGRES_PASSWORD=postgres
+        - POSTGRES_USER=storage
+        - POSTGRES_PASSWORD=storage
+        - POSTGRES_DB=storage
       ports:
         - '5432:5432'
       volumes:
         - db:/var/lib/postgresql/data
-    circles:
+      networks:
+        - crcbot
+    circles-bot:
       image: ice0nine/telegram-bot
+      networks:
+        - crcbot
 volumes:
   db:
     driver: local
+networks:
+  crcbot:
