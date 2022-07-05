@@ -1,5 +1,6 @@
 package dev.iot.telegrambot.telegramraspi.service;
 
+import dev.iot.telegrambot.telegramraspi.CirclesTelegramBot;
 import dev.iot.telegrambot.telegramraspi.service.dto.event.*;
 import dev.iot.telegrambot.telegramraspi.web3.Web3Reader;
 import org.junit.jupiter.api.Test;
@@ -46,12 +47,12 @@ public class Web3TransactionCheckerTest {
         Data data = Data.builder().events(events).build();
         EventResponseDto eventResponseDto = EventResponseDto.builder().data(data).build();
         when(graphQLClient.trackAccount(any())).thenReturn(eventResponseDto);
-        BotSender botSender = Mockito.mock(BotSender.class);
+        CirclesTelegramBot botSender = Mockito.mock(CirclesTelegramBot.class);
 
         CachedTransactionDto ctDto = CachedTransactionDto.builder().chatId("chatId").from("from").to("to").toAddr("toAddr").startBlock(BigInteger.ONE).build();
 
         Web3TransactionChecker web3TransactionChecker = new Web3TransactionChecker(web3Reader, graphQLClient);
-        web3TransactionChecker.trackAccount("chatId", "safe", "from", "toAddr", "to", botSender);
+        web3TransactionChecker.trackAccount(botSender, "chatId", "safe", "from", "toAddr", "to");
         web3TransactionChecker.checkTransactions();
 
         Map<String, List<CachedTransactionDto>> watchedTransactions = (Map<String, List<CachedTransactionDto>>) ReflectionTestUtils.getField(web3TransactionChecker, "watchedTransactions");
@@ -73,10 +74,10 @@ public class Web3TransactionCheckerTest {
         Data data = Data.builder().events(events).build();
         EventResponseDto eventResponseDto = EventResponseDto.builder().data(data).build();
         when(graphQLClient.trackAccount(any())).thenReturn(eventResponseDto);
-        BotSender botSender = Mockito.mock(BotSender.class);
+        CirclesTelegramBot botSender = Mockito.mock(CirclesTelegramBot.class);
 
         Web3TransactionChecker web3TransactionChecker = new Web3TransactionChecker(web3Reader, graphQLClient);
-        web3TransactionChecker.trackAccount("chatId", "safe", "from", "0x1", "to", botSender);
+        web3TransactionChecker.trackAccount(botSender, "chatId", "safe", "from", "0x1", "to");
         web3TransactionChecker.checkTransactions();
 
         Map<String, List<CachedTransactionDto>> watchedTransactions = (Map<String, List<CachedTransactionDto>>) ReflectionTestUtils.getField(web3TransactionChecker, "watchedTransactions");
@@ -98,12 +99,12 @@ public class Web3TransactionCheckerTest {
         Data data = Data.builder().events(events).build();
         EventResponseDto eventResponseDto = EventResponseDto.builder().data(data).build();
         when(graphQLClient.trackAccount(any())).thenReturn(eventResponseDto);
-        BotSender botSender = Mockito.mock(BotSender.class);
+        CirclesTelegramBot botSender = Mockito.mock(CirclesTelegramBot.class);
 
         CachedTransactionDto ctDto = CachedTransactionDto.builder().chatId("chatId").from("from").to("to").toAddr("0x1").startBlock(BigInteger.TWO).build();
 
         Web3TransactionChecker web3TransactionChecker = new Web3TransactionChecker(web3Reader, graphQLClient);
-        web3TransactionChecker.trackAccount("chatId", "safe", "from", "0x1", "to", botSender);
+        web3TransactionChecker.trackAccount(botSender, "chatId", "safe", "from", "0x1", "to");
         web3TransactionChecker.checkTransactions();
 
         Map<String, List<CachedTransactionDto>> watchedTransactions = (Map<String, List<CachedTransactionDto>>) ReflectionTestUtils.getField(web3TransactionChecker, "watchedTransactions");
@@ -125,10 +126,10 @@ public class Web3TransactionCheckerTest {
         Data data1 = Data.builder().events(events1).build();
         EventResponseDto eventResponseDto1 = EventResponseDto.builder().data(data1).build();
         when(graphQLClient.trackAccount(any())).thenReturn(eventResponseDto1);
-        BotSender botSender = Mockito.mock(BotSender.class);
+        CirclesTelegramBot botSender = Mockito.mock(CirclesTelegramBot.class);
 
         Web3TransactionChecker web3TransactionChecker = new Web3TransactionChecker(web3Reader, graphQLClient);
-        web3TransactionChecker.trackAccount("chatId", "safe", "from", "0x1", "to", botSender);
+        web3TransactionChecker.trackAccount(botSender, "chatId", "safe", "from", "0x1", "to");
         web3TransactionChecker.checkTransactions();
 
         Map<String, List<CachedTransactionDto>> watchedTransactions = (Map<String, List<CachedTransactionDto>>) ReflectionTestUtils.getField(web3TransactionChecker, "watchedTransactions");
@@ -150,12 +151,12 @@ public class Web3TransactionCheckerTest {
         Data data1 = Data.builder().events(events1).build();
         EventResponseDto eventResponseDto1 = EventResponseDto.builder().data(data1).build();
         when(graphQLClient.trackAccount(any())).thenReturn(eventResponseDto1);
-        BotSender botSender = Mockito.mock(BotSender.class);
+        CirclesTelegramBot botSender = Mockito.mock(CirclesTelegramBot.class);
 
         CachedTransactionDto ctDto = CachedTransactionDto.builder().chatId("chatId").from("from").to("to").toAddr("0x1").startBlock(BigInteger.ONE).build();
 
         Web3TransactionChecker web3TransactionChecker = new Web3TransactionChecker(web3Reader, graphQLClient);
-        web3TransactionChecker.trackAccount("chatId", "safe", "from", "0x1", "to", botSender);
+        web3TransactionChecker.trackAccount(botSender, "chatId", "safe", "from", "0x1", "to");
         web3TransactionChecker.checkTransactions();
 
         Map<String, List<CachedTransactionDto>> watchedTransactions = (Map<String, List<CachedTransactionDto>>) ReflectionTestUtils.getField(web3TransactionChecker, "watchedTransactions");

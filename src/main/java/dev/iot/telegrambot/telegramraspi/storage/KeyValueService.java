@@ -1,7 +1,6 @@
 package dev.iot.telegrambot.telegramraspi.storage;
 
 import org.springframework.stereotype.Service;
-import org.springframework.util.StringUtils;
 
 @Service
 public class KeyValueService {
@@ -13,27 +12,27 @@ public class KeyValueService {
     }
 
     public void setKeyValue(String key, String value, String ext) {
-        KeyValueEntity entity = keyValueRepository.findByKey(key);
+        KeyValueEntity entity = keyValueRepository.findByKeyid(key);
         if (entity == null) {
             entity = new KeyValueEntity();
         }
-        entity.setKey(key);
-        entity.setValue(value);
+        entity.setKeyid(key);
+        entity.setValueid(value);
         entity.setExt(ext);
         keyValueRepository.save(entity);
     }
 
     public String searchValue(String key) {
-        KeyValueEntity storedId = keyValueRepository.findByKey(key);
-        return storedId != null ? storedId.getValue() : key;
+        KeyValueEntity storedId = keyValueRepository.findByKeyid(key);
+        return storedId != null ? storedId.getValueid() : key;
     }
 
     public KeyValueEntity loadEntityByValue(String value) {
-        return keyValueRepository.findByValue(value);
+        return keyValueRepository.findByValueid(value);
     }
 
     public void updateValueExt(String value, String signature) {
-        KeyValueEntity entity = keyValueRepository.findByValue(value);
+        KeyValueEntity entity = keyValueRepository.findByValueid(value);
         entity.setExt(signature);
         keyValueRepository.save(entity);
     }

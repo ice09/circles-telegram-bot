@@ -3,6 +3,7 @@ package dev.iot.telegrambot.telegramraspi;
 import dev.iot.telegrambot.telegramraspi.service.CirclesAdapter;
 import dev.iot.telegrambot.telegramraspi.service.Web3TransactionChecker;
 import dev.iot.telegrambot.telegramraspi.storage.KeyValueService;
+import dev.iot.telegrambot.telegramraspi.strategy.*;
 import dev.iot.telegrambot.telegramraspi.web3.GnosisSafeOwnerCheck;
 import dev.iot.telegrambot.telegramraspi.web3.SignatureService;
 import org.springframework.beans.factory.annotation.Value;
@@ -46,7 +47,16 @@ public class TelegramRaspiApplication implements CommandLineRunner {
     public void run(String... args) throws Exception {
         try {
             TelegramBotsApi botsApi = new TelegramBotsApi(DefaultBotSession.class);
-            botsApi.registerBot(new CirclesTelegramBot(keyValueService, circlesAdapter, telegramBotName, telegramBotKey, circlesSite, web3TransactionChecker, gnosisSafeOwnerCheck, signatureService));
+            CirclesTransfer transferStrategy = new CirclesTransfer(keyValueService, circlesAdapter, telegramBotName, telegramBotKey, circlesSite, web3TransactionChecker, gnosisSafeOwnerCheck, signatureService);
+            CirclesUserInfo userInfoStrategy = new CirclesUserInfo(keyValueService, circlesAdapter, telegramBotName, telegramBotKey, circlesSite, web3TransactionChecker, gnosisSafeOwnerCheck, signatureService);
+            CirclesUserReader userReaderStrategy = new CirclesUserReader(keyValueService, circlesAdapter, telegramBotName, telegramBotKey, circlesSite, web3TransactionChecker, gnosisSafeOwnerCheck, signatureService);
+            CreateAndSendMessage createSendeStrategy = new CreateAndSendMessage(keyValueService, circlesAdapter, telegramBotName, telegramBotKey, circlesSite, web3TransactionChecker, gnosisSafeOwnerCheck, signatureService);
+            UserNameSetter userNameSetterStrategy = new UserNameSetter(keyValueService, circlesAdapter, telegramBotName, telegramBotKey, circlesSite, web3TransactionChecker, gnosisSafeOwnerCheck, signatureService);
+            UserNameVerifier userNameVerifier = new UserNameVerifier(keyValueService, circlesAdapter, telegramBotName, telegramBotKey, circlesSite, web3TransactionChecker, gnosisSafeOwnerCheck, signatureService);
+            UserNameVerifierRequest userNameVerifierRequest = new UserNameVerifierRequest(keyValueService, circlesAdapter, telegramBotName, telegramBotKey, circlesSite, web3TransactionChecker, gnosisSafeOwnerCheck, signatureService);
+            AbstractStrategy[] commands = new AbstractStrategy[]{transferStrategy, userInfoStrategy, userReaderStrategy, createSendeStrategy, userNameSetterStrategy, userNameVerifierRequest, userNameVerifier};
+            CirclesTelegramBot bot = new CirclesTelegramBot(telegramBotName, telegramBotKey, commands);
+            botsApi.registerBot(bot);
         } catch (TelegramApiException e) {
             e.printStackTrace();
         }

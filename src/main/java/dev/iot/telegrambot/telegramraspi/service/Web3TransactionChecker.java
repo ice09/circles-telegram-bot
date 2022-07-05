@@ -1,5 +1,6 @@
 package dev.iot.telegrambot.telegramraspi.service;
 
+import dev.iot.telegrambot.telegramraspi.CirclesTelegramBot;
 import dev.iot.telegrambot.telegramraspi.service.dto.event.CachedTransactionDto;
 import dev.iot.telegrambot.telegramraspi.service.dto.event.Data;
 import dev.iot.telegrambot.telegramraspi.service.dto.event.Event;
@@ -29,7 +30,7 @@ public class Web3TransactionChecker {
     private final Web3Reader web3Reader;
 
     private final GraphQLClient graphQLClient;
-    private BotSender botSender;
+    private CirclesTelegramBot bot;
 
     public Web3TransactionChecker(Web3Reader web3Reader, GraphQLClient graphQLClient) {
         this.web3Reader = web3Reader;
@@ -76,14 +77,14 @@ public class Web3TransactionChecker {
     }
 
     private void notify(String chatId, String message) {
-        botSender.createAndSendMessage(chatId, message, "Markdown");
+        bot.createAndSendMessage(chatId, message, "Markdown");
     }
 
 
-    public void trackAccount(String chatId, String safe, String fromUser, String toAddr, String to, BotSender botSender) {
+    public void trackAccount(CirclesTelegramBot bot, String chatId, String safe, String fromUser, String toAddr, String to) {
         BigInteger currentBlock = web3Reader.getCurrentBlock();
         //TODO: Refactor it! Why everytime again?
-        this.botSender = botSender;
+        this.bot = bot;
         CachedTransactionDto newCacheDto = CachedTransactionDto.builder().startBlock(currentBlock).from(fromUser).to(to).toAddr(toAddr).chatId(chatId).build();
         List<CachedTransactionDto> cachedTrxs;
         if (watchedTransactions.containsKey(safe)) {

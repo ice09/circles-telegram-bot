@@ -30,6 +30,10 @@ public class SignatureService {
         for (int i=0; i<4; i++) {
             res = Sign.recoverFromSignature(i, esig, proof);
             try {
+                if (res == null) {
+                    log.debug("Recovered Address is null, continuing...");
+                    continue;
+                }
                 log.debug("Recovered Address 0x{}", Keys.getAddress(res));
                 String address = Keys.getAddress(res);
                 if (address.equalsIgnoreCase(expectedAddress.substring(2).toLowerCase())) {

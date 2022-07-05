@@ -6,8 +6,8 @@ import org.springframework.stereotype.Repository;
 @Repository
 public interface KeyValueRepository extends CrudRepository<KeyValueEntity, Long> {
 
-    KeyValueEntity findByKey(String key);
+    KeyValueEntity findByKeyid(String key);
 
-    KeyValueEntity findByValue(String value);
+    KeyValueEntity findByValueid(String value);
 
 }

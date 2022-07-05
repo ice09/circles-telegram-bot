@@ -10,8 +10,8 @@ public class KeyValueEntity {
     @Column(name = "id", nullable = false)
     @GeneratedValue
     private Long id;
-    private String key;
-    private String value;
+    private String keyid;
+    private String valueid;
 
     private String ext;
 
@@ -23,20 +23,20 @@ public class KeyValueEntity {
         this.id = id;
     }
 
-    public String getKey() {
-        return key;
+    public String getKeyid() {
+        return keyid;
     }
 
-    public String getValue() {
-        return value;
+    public String getValueid() {
+        return valueid;
     }
 
-    public void setKey(String key) {
-        this.key = key;
+    public void setKeyid(String key) {
+        this.keyid = key;
     }
 
-    public void setValue(String value) {
-        this.value = value;
+    public void setValueid(String value) {
+        this.valueid = value;
     }
 
     public String getExt() {
@@ -51,8 +51,8 @@ public class KeyValueEntity {
     public String toString() {
         return "KeyValueEntity{" +
                 "id=" + id +
-                ", key='" + key + '\'' +
-                ", value='" + value + '\'' +
+                ", key='" + keyid + '\'' +
+                ", value='" + valueid + '\'' +
                 ", ext='" + ext + '\'' + "}";
     }
 }
