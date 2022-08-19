@@ -16,6 +16,7 @@ services:
         - crcbot
     circles-bot:
       image: ice0nine/telegram-bot
+      restart: always
       networks:
         - crcbot
 volumes:
